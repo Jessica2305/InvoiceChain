@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Wallet, Upload, TrendingUp, Shield, FileText, DollarSign, ArrowRight } from 'lucide-react';
-
+import {  Upload,  Shield, FileText,  ArrowRight } from 'lucide-react';
+// for now removed Wallet,TrendingUp and DollarSign coz its causing issues with the build, import when in use.
 // Mock data for demo purposes
 const mockInvoices = [
   {
@@ -69,7 +69,7 @@ export default function InvoiceFactoringApp() {
     alert('Invoice minted! (Connect to smart contract)');
   };
 
-  const handleBuyInvoice = (invoice) => {
+  const handleBuyInvoice = (invoice:any) => {
     if (!isKYCVerified) {
       alert('Please complete KYC verification first!');
       return;
@@ -77,10 +77,10 @@ export default function InvoiceFactoringApp() {
     alert(`Buying invoice #${invoice.id} for $${invoice.discountedPrice}`);
   };
 
-  const calculateDaysUntilDue = (dueDate) => {
+  const calculateDaysUntilDue = (dueDate:any) => {
     const today = new Date();
     const due = new Date(dueDate);
-    const diffTime = due - today;
+    const diffTime = Number(due) - Number(today);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
