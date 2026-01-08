@@ -69,7 +69,7 @@ export default function InvoiceFactoringApp() {
     alert('Invoice minted! (Connect to smart contract)');
   };
 
-  const handleBuyInvoice = (invoice:any) => {
+  const handleBuyInvoice = (invoice) => {
     if (!isKYCVerified) {
       alert('Please complete KYC verification first!');
       return;
@@ -80,7 +80,7 @@ export default function InvoiceFactoringApp() {
   const calculateDaysUntilDue = (dueDate:any) => {
     const today = new Date();
     const due = new Date(dueDate);
-    const diffTime = Number(due) - Number(today);
+    const diffTime = due - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };

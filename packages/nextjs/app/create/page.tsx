@@ -38,18 +38,18 @@ const CreateInvoice: NextPage = () => {
         args: [MARKETPLACE_ADDRESS, BigInt(tokenId)],
       });
 
-      // Step 3: List
-      // console.log("Step 3: Listing...");
-      // await listInvoice({
-      //   functionName: "listInvoice",
-      //   args: [BigInt(tokenId), parseEther(price), false],
-      // });
+      Step 3: List
       console.log("Step 3: Listing...");
       await listInvoice({
         functionName: "listInvoice",
-        // Cast to any so TypeScript doesn't block the build on ABI type mismatch
-        args: [BigInt(tokenId), parseEther(price), false] as any,
+        args: [BigInt(tokenId), parseEther(price), false],
       });
+      // console.log("Step 3: Listing...");
+      // await listInvoice({
+      //   functionName: "listInvoice",
+      //   // Cast to any so TypeScript doesn't block the build on ABI type mismatch
+      //   args: [BigInt(tokenId), parseEther(price), false] as any,
+      // });
 
       alert("Success! Invoice listed on Marketplace.");
       router.push("/marketplace"); // Redirect to marketplace
