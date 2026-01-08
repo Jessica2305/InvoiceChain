@@ -38,7 +38,7 @@ const CreateInvoice: NextPage = () => {
         args: [MARKETPLACE_ADDRESS, BigInt(tokenId)],
       });
 
-      Step 3: List
+      // Step 3: List
       console.log("Step 3: Listing...");
       await listInvoice({
         functionName: "listInvoice",
