@@ -1,9 +1,27 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import {  Upload,  Shield, FileText,  ArrowRight } from 'lucide-react';
-// for now removed Wallet,TrendingUp and DollarSign coz its causing issues with the build, import when in use.
-// Mock data for demo purposes
+import { Upload, Shield, FileText, ArrowRight } from 'lucide-react';
+import { ethers } from 'ethers';
+
+// ----------------------------------------------------------------------
+//  CONFIGURATION (PASTE YOUR DEBUG ADDRESSES HERE)
+// ----------------------------------------------------------------------
+const INVOICE_NFT_ADDRESS = "PASTE_INVOICE_NFT_ADDRESS_HERE"; 
+const MARKETPLACE_ADDRESS = "PASTE_MARKETPLACE_ADDRESS_HERE"; 
+
+const NFT_ABI = [
+  "function mintInvoice(uint256 _amount, uint256 _dueDate, string _pdfLink)",
+  "function setApprovalForAll(address operator, bool approved)",
+  "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)"
+];
+
+const MARKET_ABI = [
+  "function listInvoice(uint256 _tokenId, uint256 _amount)"
+];
+// ----------------------------------------------------------------------
+
+
 const mockInvoices = [
   {
     id: 1,
@@ -45,15 +63,25 @@ export default function InvoiceFactoringApp() {
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [clientName, setClientName] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // New loading state
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleConnectWallet = () => {
-    setIsConnected(true);
-    if (currentPage === 'home') {
-      setCurrentPage('app');
+  const handleConnectWallet = async () => {
+    if (window.ethereum) {
+        try {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            setIsConnected(true);
+            if (currentPage === 'home') {
+                setCurrentPage('app');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    } else {
+        alert("Please install MetaMask!");
     }
   };
 
@@ -65,11 +93,61 @@ export default function InvoiceFactoringApp() {
     }, 2000);
   };
 
-  const handleMintInvoice = () => {
-    alert('Invoice minted! (Connect to smart contract)');
+  // ---------------------------------------------------------
+  // THE FIXED "MAGIC" FUNCTION (Mint -> Approve -> List)
+  // ---------------------------------------------------------
+  const handleMintAndList = async () => {
+    if (!invoiceAmount || !dueDate) return;
+    setIsLoading(true);
+
+    try {
+        if (!window.ethereum) throw new Error("No crypto wallet found");
+        
+        // 1. Setup Ethers
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const userAddress = await signer.getAddress();
+
+        const nftContract = new ethers.Contract(INVOICE_NFT_ADDRESS, NFT_ABI, signer);
+        const marketContract = new ethers.Contract(MARKETPLACE_ADDRESS, MARKET_ABI, signer);
+
+        // 2. Mint Invoice
+        console.log("Step 1: Minting...");
+        const unixDate = Math.floor(new Date(dueDate).getTime() / 1000);
+        // Using hardcoded link for demo speed
+        const tx1 = await nftContract.mintInvoice(invoiceAmount, unixDate, "https://ipfs.io/demo-invoice.pdf");
+        await tx1.wait();
+        alert("Mint Successful! Next: Approve Marketplace.");
+
+        // 3. Approve Marketplace (Fixes the 'Address 1 invalid' bug)
+        console.log("Step 2: Approving...");
+        const tx2 = await nftContract.setApprovalForAll(MARKETPLACE_ADDRESS, true);
+        await tx2.wait();
+        
+        // 4. Find the Token ID (Dynamic check)
+        // We grab the ID of the *first* invoice this wallet owns to be safe
+        const tokenId = await nftContract.tokenOfOwnerByIndex(userAddress, 0);
+        console.log("Listing Token ID:", tokenId.toString());
+
+        // 5. List on Marketplace
+        console.log("Step 3: Listing...");
+        const price = Math.floor(Number(invoiceAmount) * 0.95); // 95% of value
+        const tx3 = await marketContract.listInvoice(tokenId, price);
+        await tx3.wait();
+
+        alert("SUCCESS! Invoice Listed on Blockchain.");
+        setIsLoading(false);
+        setActiveTab('marketplace'); // Redirect to marketplace to show result
+
+    } catch (error: any) {
+        console.error("Transaction Failed:", error);
+        alert(`Error: ${error.reason || error.message || "Check Console"}`);
+        setIsLoading(false);
+    }
   };
 
-  const handleBuyInvoice = (invoice) => {
+
+  const handleBuyInvoice = (invoice:any) => {
     if (!isKYCVerified) {
       alert('Please complete KYC verification first!');
       return;
@@ -80,7 +158,7 @@ export default function InvoiceFactoringApp() {
   const calculateDaysUntilDue = (dueDate:any) => {
     const today = new Date();
     const due = new Date(dueDate);
-    const diffTime = due - today;
+    const diffTime = Number(due) - Number(today);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
@@ -205,7 +283,7 @@ export default function InvoiceFactoringApp() {
       <header className="bg-slate-900/50 border-b border-slate-800/50 backdrop-blur-xl relative z-10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3 group cursor-pointer">
+            <div className="flex items-center space-x-3 group cursor-pointer" onClick={() => setCurrentPage('home')}>
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 transition-all duration-300 group-hover:shadow-blue-500/40 group-hover:scale-110">
                 <FileText className="w-5 h-5 text-white" />
               </div>
@@ -232,7 +310,7 @@ export default function InvoiceFactoringApp() {
               )}
               
               <div className="px-4 py-2 bg-slate-800/50 text-slate-300 text-sm rounded-lg font-mono border border-slate-700/50 backdrop-blur-sm">
-                {isConnected ? '0x1234...5678' : 'Not Connected'}
+                {isConnected ? '0x...Connected' : 'Not Connected'}
               </div>
             </div>
           </div>
@@ -409,11 +487,11 @@ export default function InvoiceFactoringApp() {
                 )}
 
                 <button
-                  onClick={handleMintInvoice}
-                  disabled={!isConnected || !invoiceAmount || !clientName || !dueDate}
+                  onClick={handleMintAndList}
+                  disabled={!isConnected || !invoiceAmount || !clientName || !dueDate || isLoading}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105"
                 >
-                  Create Invoice NFT
+                  {isLoading ? 'Processing Blockchain Tx...' : 'Create Invoice NFT & List'}
                 </button>
               </div>
             </div>
