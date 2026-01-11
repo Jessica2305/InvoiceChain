@@ -54,7 +54,7 @@ const SellerDashboard: NextPage = () => {
     try {
       await listInvoice({
         functionName: "listInvoice",
-        args: [BigInt(tokenId), parseEther(price), BigInt(0)],
+        args: [BigInt(tokenId), parseEther(price), false],
       });
       alert("Listing Successful! Your invoice is on the market.");
     } catch (e) {
