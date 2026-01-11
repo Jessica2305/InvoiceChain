@@ -7,8 +7,8 @@ import { ethers } from 'ethers';
 // ----------------------------------------------------------------------
 //  CONFIGURATION (PASTE YOUR DEBUG ADDRESSES HERE)
 // ----------------------------------------------------------------------
-const INVOICE_NFT_ADDRESS = "PASTE_INVOICE_NFT_ADDRESS_HERE"; 
-const MARKETPLACE_ADDRESS = "PASTE_MARKETPLACE_ADDRESS_HERE"; 
+const INVOICE_NFT_ADDRESS = "0xB3FC86d90c44A76B7f72b9B38Db336E060cCB67"; 
+const MARKETPLACE_ADDRESS = "0xF4Fc93a1533C41e76d1a11DA7ba38a7ff1773278"; 
 
 const NFT_ABI = [
   "function mintInvoice(uint256 _amount, uint256 _dueDate, string _pdfLink)",
