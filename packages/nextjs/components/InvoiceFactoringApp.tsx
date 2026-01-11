@@ -4,9 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Shield, FileText, ArrowRight } from 'lucide-react';
 import { ethers } from 'ethers';
 
-// ----------------------------------------------------------------------
-//  CONFIGURATION (PASTE YOUR DEBUG ADDRESSES HERE)
-// ----------------------------------------------------------------------
+
 const INVOICE_NFT_ADDRESS = "0xB3FC86d90c44A76B7f72b9B38Db336E060cCB67"; 
 const MARKETPLACE_ADDRESS = "0xF4Fc93a1533C41e76d1a11DA7ba38a7ff1773278"; 
 
@@ -16,8 +14,9 @@ const NFT_ABI = [
   "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)"
 ];
 
+//  FIXED ABI: Added 'address _nftContract' as the first argument
 const MARKET_ABI = [
-  "function listInvoice(uint256 _tokenId, uint256 _amount)"
+  "function listInvoice(address _nftContract, uint256 _tokenId, uint256 _amount)"
 ];
 // ----------------------------------------------------------------------
 
@@ -63,7 +62,7 @@ export default function InvoiceFactoringApp() {
   const [invoiceAmount, setInvoiceAmount] = useState('');
   const [clientName, setClientName] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // New loading state
+  const [isLoading, setIsLoading] = useState(false); 
 
   useEffect(() => {
     setMounted(true);
@@ -94,7 +93,7 @@ export default function InvoiceFactoringApp() {
   };
 
   // ---------------------------------------------------------
-  // THE FIXED "MAGIC" FUNCTION (Mint -> Approve -> List)
+  // THE FIXED LOGIC (Mint -> Approve -> List)
   // ---------------------------------------------------------
   const handleMintAndList = async () => {
     if (!invoiceAmount || !dueDate) return;
@@ -114,30 +113,34 @@ export default function InvoiceFactoringApp() {
         // 2. Mint Invoice
         console.log("Step 1: Minting...");
         const unixDate = Math.floor(new Date(dueDate).getTime() / 1000);
-        // Using hardcoded link for demo speed
+        
+        // Note: Sending 'invoiceAmount' as simple number string. 
+        // If your contract expects Wei (18 decimals), change to: ethers.parseEther(invoiceAmount)
         const tx1 = await nftContract.mintInvoice(invoiceAmount, unixDate, "https://ipfs.io/demo-invoice.pdf");
         await tx1.wait();
         alert("Mint Successful! Next: Approve Marketplace.");
 
-        // 3. Approve Marketplace (Fixes the 'Address 1 invalid' bug)
+        // 3. Approve Marketplace
         console.log("Step 2: Approving...");
         const tx2 = await nftContract.setApprovalForAll(MARKETPLACE_ADDRESS, true);
         await tx2.wait();
         
-        // 4. Find the Token ID (Dynamic check)
+        // 4. Find the Token ID
         // We grab the ID of the *first* invoice this wallet owns to be safe
         const tokenId = await nftContract.tokenOfOwnerByIndex(userAddress, 0);
         console.log("Listing Token ID:", tokenId.toString());
 
-        // 5. List on Marketplace
+        // 5. List on Marketplace (THE FIX IS HERE)
         console.log("Step 3: Listing...");
-        const price = Math.floor(Number(invoiceAmount) * 0.95); // 95% of value
-        const tx3 = await marketContract.listInvoice(tokenId, price);
+        const price = Math.floor(Number(invoiceAmount) * 0.95); 
+        
+        //  PASSING INVOICE_NFT_ADDRESS FIRST (Fixes 'Invalid Address' error)
+        const tx3 = await marketContract.listInvoice(INVOICE_NFT_ADDRESS, tokenId, price);
         await tx3.wait();
 
         alert("SUCCESS! Invoice Listed on Blockchain.");
         setIsLoading(false);
-        setActiveTab('marketplace'); // Redirect to marketplace to show result
+        setActiveTab('marketplace'); 
 
     } catch (error: any) {
         console.error("Transaction Failed:", error);
