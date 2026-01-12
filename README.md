@@ -6,7 +6,7 @@ This project was built as part of a Web3 hackathon.
 
 ---
 
-## What Problem Are We Solving?
+## What Problem Are We solving?
 
 Businesses often wait 30–90 days to get paid on invoices, hurting cash flow.
 
