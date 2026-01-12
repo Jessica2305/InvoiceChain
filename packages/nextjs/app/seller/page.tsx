@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { NextPage } from "next";
 import { parseEther } from "viem";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 const SellerDashboard: NextPage = () => {
   // State for form inputs
   const [amount, setAmount] = useState("");
