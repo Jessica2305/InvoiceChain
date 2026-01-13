@@ -16,8 +16,9 @@ const NFT_ABI = [
 
 //  FIXED ABI: Added 'address _nftContract' as the first argument
 const MARKET_ABI = [
-  "function listInvoice(address _nftContract, uint256 _tokenId, uint256 _amount)"
+  "function listInvoice(uint256 tokenId, uint256 _price, bool _useCustody)"
 ];
+
 // ----------------------------------------------------------------------
 
 

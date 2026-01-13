@@ -4,11 +4,12 @@ import { useState } from "react";
 import type { NextPage } from "next";
 import { parseEther } from "viem";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+
 const SellerDashboard: NextPage = () => {
   // State for form inputs
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [tokenId, setTokenId] = useState("0"); // User needs to manually type ID for now (simplifies code)
   const [price, setPrice] = useState("");
 
   // 1. Hook to MINT Invoice
@@ -19,11 +20,6 @@ const SellerDashboard: NextPage = () => {
 
   // 3. Hook to LIST Invoice
   const { writeContractAsync: listInvoice } = useScaffoldWriteContract("CompliantInvoiceMarketplace");
-
-  const { data: totalSupply } = useScaffoldReadContract({
-  contractName: "InvoiceNFT",
-  functionName: "totalSupply",
-  });
 
   // Helper to get Marketplace Address (Hardcoded for simplicity or fetched dynamically)
   // You can find this in your Debug tab. Replace this if it changes!
@@ -42,31 +38,29 @@ const SellerDashboard: NextPage = () => {
     }
   };
 
-const handleApprove = async () => {
-  try {
-    const newTokenId = (totalSupply || 1n) - 1n; // Last minted token
-    await approveMarketplace({
-      functionName: "approve",
-      args: [MARKETPLACE_ADDRESS, newTokenId],
-    });
-    alert(`Approval Successful for Token #${newTokenId}! Now List the invoice.`);
-  } catch (e) {
-    console.error(e);
-  }
-};
+  const handleApprove = async () => {
+    try {
+      await approveMarketplace({
+        functionName: "approve",
+        args: [MARKETPLACE_ADDRESS, BigInt(tokenId)],
+      });
+      alert("Approval Successful! Now List the invoice.");
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
-const handleList = async () => {
-  try {
-    const newTokenId = (totalSupply || 1n) - 1n; // Last minted token
-    await listInvoice({
-      functionName: "listInvoice",
-      args: [newTokenId, parseEther(price), false],
-    });
-    alert(`Listing Successful! Token #${newTokenId} is on the market.`);
-  } catch (e) {
-    console.error(e);
-  }
-};
+  const handleList = async () => {
+    try {
+      await listInvoice({
+        functionName: "listInvoice",
+        args: [BigInt(tokenId), parseEther(price), false],
+      });
+      alert("Listing Successful! Your invoice is on the market.");
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center flex-grow pt-10">
@@ -98,6 +92,12 @@ const handleList = async () => {
         {/* Step 2: Approve & List */}
         <div>
           <h2 className="text-2xl font-bold mb-2">Step 2: Sell It</h2>
+          <input
+            type="number"
+            placeholder="Token ID (Check Debug tab)"
+            className="input input-bordered w-full mb-2"
+            onChange={e => setTokenId(e.target.value)}
+          />
           <input
             type="number"
             placeholder="Sale Price (USDT)"
